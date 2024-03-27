@@ -11,6 +11,11 @@ LOGS_FOLDER = "./logs"
 LOGNAME = f"/pdf_metadata_parser_{TASK_ID}.log"
 NUM_JOBS = pdf_tables_dict["num_jobs"]
 
+logging.basicConfig(filename=LOGS_FOLDER + LOGNAME,
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.INFO)
 
 def divide_chunks(list_input: list, num_chunks: int) -> list:
     """
