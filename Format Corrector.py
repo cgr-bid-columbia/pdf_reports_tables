@@ -1,7 +1,10 @@
 import pandas as pd 
 
+# specify Excel file formatted incorrectly 
+excel_file = "000002-2021-CG-APP-ficha_resumen_url_table_1.xlsx"
+
 # read Excel file into pandas dataframe 
-df = pd.read_excel("000002-2021-CG-APP-ficha_resumen_url_table_1.xlsx")
+df = pd.read_excel(excel_file)
 
 # fix 'row' column 
 df.at[0, 'row'] += " " + df.at[1, 'row']
