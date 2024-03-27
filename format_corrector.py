@@ -21,7 +21,9 @@ df.at[7, 'value'] += " " + df.at[8, 'value'] + " " + df.at[9, 'value'] + " " + d
 # special case for 15, 16 
 indicator_words = df.at[15, 'value'].split() 
 value_words = df.at[16, 'value'].split() 
-df.at[15, 'value'] = [indicator_words[i] + " " + value_words[i] for i in range(len(indicator_words))]
+value_words = value_words[0:2] + [value_words[2] + " " + value_words[3]]
+df.at[15, 'value'] = str([indicator_words[i] + " " + value_words[i] for i in range(len(indicator_words))])
+df.at[19, 'value'] += " " + df.at[20, 'value']
 
 # drop irrelevant rows 
 df.drop([1, 3, 4, 6, 8, 9, 10, 11, 14, 16, 18, 20], inplace=True) 
