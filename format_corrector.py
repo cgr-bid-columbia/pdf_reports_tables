@@ -1,7 +1,24 @@
 from glob import glob
 from tqdm import tqdm
 import pandas as pd 
-import json
+import logging, json, os
+
+JSON_FILE = "pdf_tables.json"
+pdf_tables_file = open(JSON_FILE, "r")
+pdf_tables_dict = json.load(pdf_tables_file)
+TASK_ID = os.environ.get("SLURM_ARRAY_TASK_ID")
+LOGS_FOLDER = "./logs"
+LOGNAME = f"/pdf_metadata_parser_{TASK_ID}.log"
+NUM_JOBS = pdf_tables_dict["num_jobs"]
+
+
+def divide_chunks(list_input: list, num_chunks: int) -> list:
+    """
+    Divides list into chucks of size num_chunks
+    """
+    for index in range(0, len(list_input), num_chunks):
+        yield list_input[index:index + num_chunks]
+
 
 def parse_table_one(file_name: str, output_path: str, output_sufix="_parsed") -> None:
     """
@@ -47,18 +64,24 @@ def parse_table_one(file_name: str, output_path: str, output_sufix="_parsed") ->
 
 
 if __name__ == "__main__":
-    # 1. read json file
-    pdf_tables_file = open("pdf_tables.json", "r")
-    pdf_tables_dict = json.load(pdf_tables_file)
-
-    # 2. read paths
+    # read paths
     input_path = pdf_tables_dict["input_path"] 
     output_path = pdf_tables_dict["output_path"]
 
-    # 3. read all the pdfs from input path
+    # read all the pdfs from input path
     files_paths = glob(input_path + "/*.pdf", recursive=True) # reading pdfs from input path
-    first_tables_paths = [path for path in files_paths if "first_table" in path.lower()]
 
-    # 4. run your function `parse_table_1` on all the excel files that contain "first_table" string (e.g. "something_first_table.xlsx")
-    for file_path in tqdm(first_tables_paths):
-        parse_table_one(input_path + "/" + file_path, output_path)
+    # run function `parse_table_1` on all the excel files that contain "first_table" string
+    first_tables_paths = [path for path in files_paths if "first_table" in path.lower()]
+    print("first_tables_paths: ", first_tables_paths)
+
+    # splitting paths into lists that can be evaluated per job
+    paths_splitted = list(divide_chunks(first_tables_paths, int(len(first_tables_paths)/NUM_JOBS)))
+    
+    logging.info(f"starting parsing of table 1 (table index: 0)")
+    for file_path in tqdm(paths_splitted[int(TASK_ID)-1]):
+        logging.info(f"parsing: file {file_path}")
+        parse_table_one(file_path, output_path)
+    
+    logging.info(f"ending the parsing of pdfs") 
+
