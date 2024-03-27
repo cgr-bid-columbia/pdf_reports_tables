@@ -20,3 +20,11 @@ indicator_words = df.at[15, 'value'].split()
 value_words = df.at[16, 'value'].split() 
 df.at[15, 'value'] = [indicator_words[i] + " " + value_words[i] for i in range(len(indicator_words))]
 
+# drop irrelevant rows 
+df.drop([1, 3, 4, 6, 8, 9, 10, 11, 14, 16, 18, 20], inplace=True) 
+
+# renumber initial column 
+df.iloc[:, 0] = range(0, len(df)) 
+
+# write corrected dataframe back to an Excel sheet 
+df.to_excel("corrected_excel_file.xlsx", index=False) 
