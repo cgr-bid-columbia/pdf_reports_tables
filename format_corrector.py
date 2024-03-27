@@ -20,16 +20,13 @@ def divide_chunks(list_input: list, num_chunks: int) -> list:
         yield list_input[index:index + num_chunks]
 
 
-def parse_table_one(file_name: str, output_path: str, output_sufix="_parsed") -> None:
+def parse_table_one(excel_file: str, output_path: str, output_sufix="_parsed") -> None:
     """
     Parses the first table of the "Informe de Control" and writes 
     the parsed table to a new Excel file.
 
     Note: the file name should NOT include the ".xlsx" suffix
     """
-
-    # specify Excel file formatted incorrectly 
-    excel_file = file_name + ".xlsx"
 
     # read Excel file into pandas dataframe 
     df = pd.read_excel(excel_file)
@@ -60,6 +57,7 @@ def parse_table_one(file_name: str, output_path: str, output_sufix="_parsed") ->
     df.iloc[:, 0] = range(0, len(df)) 
 
     # write corrected dataframe back to an Excel sheet 
+    file_name = excel_file.split("/")[-1].split(".")[0]
     df.to_excel(output_path + "/" + file_name + output_sufix + ".xlsx", index=False) 
 
 
@@ -72,7 +70,7 @@ if __name__ == "__main__":
     files_paths = glob(input_path + "/*.xlsx", recursive=True) # reading pdfs from input path
 
     # run function `parse_table_1` on all the excel files that contain "first_table" string
-    first_tables_paths = [path for path in files_paths if "table_1" in path.lower()][:6]
+    first_tables_paths = [path for path in files_paths if "table_1" in path.lower() and "raw" not in path.lower()][:6]
     print("first_tables_paths: ", first_tables_paths)
 
     # splitting paths into lists that can be evaluated per job
