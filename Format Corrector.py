@@ -12,3 +12,11 @@ df.at[13, 'row'] += " " + df.at[14, 'row']
 df.at[17, 'row'] += " " + df.at[18, 'row']
 df.at[19, 'row'] += " " + df.at[20, 'row']
 
+# fix 'value' colum 
+df.at[2, 'value'] += " " + df.at[3, 'value'] + " " + df.at[4, 'value'] 
+df.at[7, 'value'] += " " + df.at[8, 'value'] + " " + df.at[9, 'value'] + " " + df.at[10, 'value'] + " " + df.at[11, 'value'] 
+# special case for 15, 16 
+indicator_words = df.at[15, 'value'].split() 
+value_words = df.at[16, 'value'].split() 
+df.at[15, 'value'] = [indicator_words[i] + " " + value_words[i] for i in range(len(indicator_words))]
+
