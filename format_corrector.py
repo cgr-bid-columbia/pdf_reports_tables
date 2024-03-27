@@ -3,7 +3,7 @@ from tqdm import tqdm
 import pandas as pd 
 import logging, json, os
 
-JSON_FILE = "pdf_tables.json"
+JSON_FILE = "paths.json"
 pdf_tables_file = open(JSON_FILE, "r")
 pdf_tables_dict = json.load(pdf_tables_file)
 TASK_ID = os.environ.get("SLURM_ARRAY_TASK_ID")
