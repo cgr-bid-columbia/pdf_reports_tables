@@ -69,10 +69,10 @@ if __name__ == "__main__":
     output_path = pdf_tables_dict["output_path"]
 
     # read all the pdfs from input path
-    files_paths = glob(input_path + "/*.pdf", recursive=True) # reading pdfs from input path
+    files_paths = glob(input_path + "/*.xlsx", recursive=True) # reading pdfs from input path
 
     # run function `parse_table_1` on all the excel files that contain "first_table" string
-    first_tables_paths = [path for path in files_paths if "first_table" in path.lower()]
+    first_tables_paths = [path for path in files_paths if "first_table" in path.lower()][:6]
     print("first_tables_paths: ", first_tables_paths)
 
     # splitting paths into lists that can be evaluated per job
