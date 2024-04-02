@@ -32,14 +32,18 @@ for index, cell_value in df['row'].items():
 df.fillna({'value': ''}, inplace=True)
 # turn all value columns to strings 
 df['value'] = df['value'].astype(str) 
+'''
 # manually corrected rows, will somehow automate to account for other formats 
 df.iloc[2, 2] += " " + df.iloc[3, 2] + " " + df.iloc[4, 2] 
 df.iloc[7, 2] += " " + df.iloc[8, 2] + " " + df.iloc[9, 2] + " " + df.iloc[10, 2] + " " + df.iloc[11, 2] 
 df.iloc[15, 2] += " " + df.iloc[16, 2] 
-df.iloc[19, 2] += " " + df.iloc[20, 2]
+df.iloc[19, 2] += " " + df.iloc[20, 2] 
+'''
 
-# drop irrelevant rows 
-df.dropna(subset=['value'], inplace=True)
+# drop irrelevant columns 
+df['row'] = sorted(df['row'], key=lambda x: x == '')
+### need to figure out how to make sure items in both columns are in the same rows to drop rows 
+### row column indexes down until a colon which offsets them with the value column 
 
 # renumber initial column 
 df.iloc[:, 0] = range(0, len(df)) 
