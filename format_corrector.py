@@ -7,15 +7,30 @@ excel_file = "000002-2021-CG-APP-ficha_resumen_url_table_1.xlsx"
 df = pd.read_excel(excel_file)
 
 # fix 'row' column 
-df.at[0, 'row'] += " " + df.at[1, 'row']
-df.at[2, 'row'] += " " + str(df.at[3, 'row']) 
-df.at[5, 'row'] += " " + df.at[6, 'row']
-df.at[7, 'row'] += " " + df.at[8, 'row']
-df.at[13, 'row'] += " " + df.at[14, 'row']
-df.at[17, 'row'] += " " + df.at[18, 'row']
-df.at[19, 'row'] += " " + df.at[20, 'row']
 
-# fix 'value' colum 
+# create variable to store current phrase being evaluated 
+current_phrase = "" 
+
+# iterate through row column 
+for index, row in df.iterrows(): 
+    cell_value = row['row'] 
+
+    if cell_value.endswith(":"): 
+        # add current cell ending with : to current_phrase 
+        current_phrase += cell_value 
+
+        # update cell with full combined phrase 
+        df.at[index, 'row'] = current_phrase 
+
+        current_phrase = "" 
+    else: 
+        # add cell to current phrase until colon is found 
+        current_phrase += cell_value 
+
+# drop empty cells in column 
+df['row'].replace('', pd.NA, inplace=True) 
+
+# fix 'value' column 
 df.at[2, 'value'] += " " + df.at[3, 'value'] + " " + df.at[4, 'value'] 
 df.at[7, 'value'] += " " + df.at[8, 'value'] + " " + df.at[9, 'value'] + " " + df.at[10, 'value'] + " " + df.at[11, 'value'] 
 # special case for 15, 16 
