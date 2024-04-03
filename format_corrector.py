@@ -40,10 +40,8 @@ df.iloc[15, 2] += " " + df.iloc[16, 2]
 df.iloc[19, 2] += " " + df.iloc[20, 2] 
 '''
 
-# drop irrelevant columns 
+# brings non-empty rows to the top, maintaining their order 
 df['row'] = sorted(df['row'], key=lambda x: x == '')
-### need to figure out how to make sure items in both columns are in the same rows to drop rows 
-### row column indexes down until a colon which offsets them with the value column 
 
 # renumber initial column 
 df.iloc[:, 0] = range(0, len(df)) 
