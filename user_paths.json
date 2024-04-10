@@ -2,8 +2,8 @@
     "users": [
         { 
             "username": "jacobposada", 
-            "input_path": "/Users/jacobposada/columbia/econ research/tables_1_unparsed", 
-            "output_path": "/Users/jacobposada/columbia/econ research/tables_1_parsed" 
+            "input_path": "/Users/jacobposada/columbia/econ research/tables_1_unparsed/", 
+            "output_path": "/Users/jacobposada/columbia/econ research/tables_1_parsed/" 
         }
     ]
 }
