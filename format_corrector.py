@@ -1,7 +1,28 @@
 import pandas as pd 
+import json 
+
+# load the JSON file 
+with open ('user_paths.json') as f: 
+    user_data = json.load(f) 
+
+# function to get input and output paths based on username 
+def get_paths(username): 
+    for user in user_data['users']: 
+        if user['username'] == username: 
+            return user['input_path'], user['output_path'] 
+    return None, None # return None if username not found 
+
+username = input("Enter username: ")
+
+# get input and output paths 
+input_path, output_path = get_paths(username) # how do i get the username without manually inserting it? 
+print (input_path) 
+print(output_path)
+
 
 # specify Excel file formatted incorrectly 
-excel_file = "12215-2021-CG-SADEN-AOP-ficha_resumen_url_table_1.xlsx"
+file_name = "12215-2021-CG-SADEN-AOP-ficha_resumen_url_table_1"
+excel_file = input_path + file_name + ".xlsx"
 
 
 # read Excel file into pandas dataframe 
@@ -131,4 +152,4 @@ df = parse_column_2_format_2(df)
 print(df)
 
 # write corrected dataframe back to an Excel sheet 
-df.to_excel("corrected_excel_file.xlsx", index=False) 
+df.to_excel(output_path + file_name + "_parsed.xlsx", index=False) 
