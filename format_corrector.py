@@ -1,12 +1,14 @@
 import pandas as pd 
 
 # specify Excel file formatted incorrectly 
-excel_file = "000002-2021-CG-APP-ficha_resumen_url_table_1.xlsx"
+excel_file = "12215-2021-CG-SADEN-AOP-ficha_resumen_url_table_1.xlsx"
+
 
 # read Excel file into pandas dataframe 
 df = pd.read_excel(excel_file)
 
-def column_one_parser(dataframe): 
+
+def parse_column_1(dataframe): 
 ## formats 'row' column and cleans up empty cells, works for all files 
 
     # create variable to store current phrase being evaluated 
@@ -35,10 +37,11 @@ def column_one_parser(dataframe):
 
     return df 
 
+
 ### FUNCTION FOR VALUE COLUMN 
 
-def column_two_format_one_parser(dataframe): 
-## formats 'value' column, works for file format one 
+def parse_column_2_format_1(dataframe): 
+## formats 'value' column, works for file format 1 
     
     # fill empty value rows with empty strings 
     df.fillna({'value': ''}, inplace=True) 
@@ -61,11 +64,70 @@ def column_two_format_one_parser(dataframe):
 
     return df 
 
-# renumber initial column 
+
+def parse_column_2_format_2(dataframe): 
+## formats 'value' column, works for file format 2 
+    
+    # fill empty value rows with empty strings 
+    df.fillna({'value': ''}, inplace=True) 
+
+    # turn all value columns to strings 
+    df['value'] = df['value'].astype(str) 
+
+    # manually corrects and cleans rows 
+    df.iloc[2,2] += " " + df.iloc[3, 2] + " " + df.iloc[4, 2] + " " + df.iloc[5, 2] + " " + df.iloc[6, 2] 
+    df.iloc[3:7, 2] = "" 
+    df.iloc[8,2] += " " + df.iloc[9, 2] 
+    df.iloc[9,2] = ""
+
+    # push empty rows to bottom 
+    df['value'] = sorted(df['value'], key=lambda x: x == '') 
+
+    return df 
+
+
+def parse_column_2_format_3(dataframe): 
+## formats 'value' column, works for file format 3 
+    
+    # fill empty value rows with empty strings 
+    df.fillna({'value': ''}, inplace=True) 
+
+    # turn all value columns to strings 
+    df['value'] = df['value'].astype(str) 
+
+    # manually corrects and cleans rows 
+    df.iloc[1,2] += df.iloc[2,2]
+    df.iloc[2,2] = "" 
+    df.iloc[4,2] += df.iloc[5,2] 
+    df.iloc[5,2] = "" 
+
+    # push empty rows to bottom 
+    df['value'] = sorted(df['value'], key=lambda x: x == '') 
+
+    return df 
+
+
+def parse_column_2_format_4(dataframe): 
+## formats 'value' column, works for file format 3 
+    
+    # fill empty value rows with empty strings 
+    df.fillna({'value': ''}, inplace=True) 
+
+    # turn all value columns to strings 
+    df['value'] = df['value'].astype(str) 
+
+    # manually corrects and cleans rows 
+
+
+
+
+# renumber indexing column in case numbers incorrect 
 df.iloc[:, 0] = range(0, len(df)) 
 
-df = column_one_parser(df) 
-df = column_two_format_one_parser(df) 
+
+
+df = parse_column_1(df) 
+df = parse_column_2_format_2(df) 
 print(df)
 
 # write corrected dataframe back to an Excel sheet 
