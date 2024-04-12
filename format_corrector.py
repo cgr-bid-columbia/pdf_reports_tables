@@ -1,21 +1,39 @@
 from glob import glob
 from tqdm import tqdm
 import pandas as pd 
+import numpy as np
 import logging, json, os
 
 JSON_FILE = "paths.json"
 pdf_tables_file = open(JSON_FILE, "r")
 pdf_tables_dict = json.load(pdf_tables_file)
-TASK_ID = os.environ.get("SLURM_ARRAY_TASK_ID")
+# TASK_ID = os.environ.get("SLURM_ARRAY_TASK_ID")
 LOGS_FOLDER = "./logs"
-LOGNAME = f"/pdf_metadata_parser_{TASK_ID}.log"
-NUM_JOBS = pdf_tables_dict["num_jobs"]
+# LOGNAME = f"/pdf_metadata_parser_{TASK_ID}.log"
+LOGNAME = f"/pdf_metadata_parser.log"
+# NUM_JOBS = pdf_tables_dict["num_jobs"]
 
 logging.basicConfig(filename=LOGS_FOLDER + LOGNAME,
                     filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.INFO)
+
+def detect_format(input_excel: str) -> tuple:
+    """
+    Detects format of PDFs for parsing
+
+    Input: path to excel file
+    """
+    excel_df = pd.read_excel(input_excel)
+    
+    nan_count_col_1 = 0 # counting nans on file
+    for _, row in excel_df.iterrows():
+        if str(row["row"]) == "nan":
+            nan_count_col_1 += 1
+    
+    return len(excel_df), nan_count_col_1
+
 
 def divide_chunks(list_input: list, num_chunks: int) -> list:
     """
@@ -69,12 +87,30 @@ def parse_table_one(excel_file: str, output_path: str, output_sufix="_parsed") -
         output_report["status"] = "parser didn't work" # update status of the parsing
         output_report["errors"] = str(e) # update status of the parsing
 
-
     # write corrected dataframe back to an Excel sheet 
     file_name = excel_file.split("/")[-1].split(".")[0]
     df.to_excel(output_path + "/" + file_name + output_sufix + ".xlsx", index=False) 
 
     return output_report 
+
+
+def diagnostic_data(list_files: list, output_path: str, report_name="data_diagnostic") -> None:
+    """
+    Obtain a report on the format of the data from folder
+    """
+
+    # placeholder for data 
+    output_report = {"file_name": [], "num_rows": [], "num_nans_first_col": []}
+
+    for table in list_files:
+        output_report["file_name"].append(table)
+
+        num_rows, num_nans_first_col = detect_format(table)
+        output_report["num_rows"].append(num_rows)
+        output_report["num_nans_first_col"].append(num_nans_first_col)
+
+    output_report_df = pd.DataFrame.from_dict(output_report, orient="index").transpose()
+    output_report_df.to_excel(output_path + f"/{report_name}.xlsx")
 
 
 if __name__ == "__main__":
@@ -86,25 +122,27 @@ if __name__ == "__main__":
     files_paths = glob(input_path + "/*.xlsx", recursive=True) # reading pdfs from input path
 
     # run function `parse_table_1` on all the excel files that contain "first_table" string
-    first_tables_paths = [path for path in files_paths if "table_1" in path.lower() and "raw" not in path.lower()][:6]
+    first_table_paths = [path for path in files_paths if "table_1" in path.lower() and "raw" not in path.lower() and "~" not in path]
 
-    # splitting paths into lists that can be evaluated per job
-    paths_splitted = list(divide_chunks(first_tables_paths, int(len(first_tables_paths)/NUM_JOBS)))
-    paths_for_job = paths_splitted[int(TASK_ID)-1]
+    diagnostic_data(first_table_paths, output_path)
 
-    list_reports = [] # creating of reports with all the parsing reports 
+    # # splitting paths into lists that can be evaluated per job
+    # paths_splitted = list(divide_chunks(first_tables_paths, int(len(first_tables_paths)/NUM_JOBS)))
+    # paths_for_job = paths_splitted[int(TASK_ID)-1]
 
-    logging.info(f"starting parsing of table 1 (table index: 0)")
-    for file_path in tqdm(paths_for_job):
-        logging.info(f"parsing: file {file_path}")
+    # list_reports = [] # creating of reports with all the parsing reports 
 
-        output_report = parse_table_one(file_path, output_path) # parsing data
+    # logging.info(f"starting parsing of table 1 (table index: 0)")
+    # for file_path in tqdm(paths_for_job):
+    #     logging.info(f"parsing: file {file_path}")
 
-        # storing parsing reports
-        output_report_df = pd.DataFrame.from_dict(output_report, orient="index").transpose()
-        list_reports.append(output_report_df)
+    #     output_report = parse_table_one(file_path, output_path) # parsing data
 
-    pd.concat(list_reports).to_excel(output_path + f"/parsing_reports_job_{TASK_ID}.xlsx", index=False) # saving parsing reports
+    #     # storing parsing reports
+    #     output_report_df = pd.DataFrame.from_dict(output_report, orient="index").transpose()
+    #     list_reports.append(output_report_df)
 
-    logging.info(f"ending the parsing of pdfs") 
+    # pd.concat(list_reports).to_excel(output_path + f"/parsing_reports_job_{TASK_ID}.xlsx", index=False) # saving parsing reports
+
+    # logging.info(f"ending the parsing of pdfs") 
 

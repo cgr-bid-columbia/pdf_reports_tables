@@ -1,2 +1,5 @@
+*.txt
 *.xlsx
+*.json
+logs/
 .DS_Store
