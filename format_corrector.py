@@ -28,11 +28,15 @@ def detect_format(input_excel: str) -> tuple:
     excel_df = pd.read_excel(input_excel)
     
     nan_count_col_1 = 0 # counting nans on file
-    for _, row in excel_df.iterrows():
-        if str(row["row"]) == "nan":
-            nan_count_col_1 += 1
+    error = "no_error"
+    try:
+        for _, row in excel_df.iterrows(): 
+            if str(row["row"]) == "nan":
+                nan_count_col_1 += 1
+    except Exception as e:
+        error = str(e)
     
-    return len(excel_df), nan_count_col_1
+    return len(excel_df), nan_count_col_1, error
 
 
 def divide_chunks(list_input: list, num_chunks: int) -> list:
@@ -100,14 +104,15 @@ def diagnostic_data(list_files: list, output_path: str, report_name="data_diagno
     """
 
     # placeholder for data 
-    output_report = {"file_name": [], "num_rows": [], "num_nans_first_col": []}
+    output_report = {"file_name": [], "num_rows": [], "num_nans_first_col": [], "error_code": []}
 
-    for table in list_files:
+    for table in tqdm(list_files):
         output_report["file_name"].append(table)
 
-        num_rows, num_nans_first_col = detect_format(table)
+        num_rows, num_nans_first_col, error_code = detect_format(table)
         output_report["num_rows"].append(num_rows)
         output_report["num_nans_first_col"].append(num_nans_first_col)
+        output_report["error_code"].append(error_code)
 
     output_report_df = pd.DataFrame.from_dict(output_report, orient="index").transpose()
     output_report_df.to_excel(output_path + f"/{report_name}.xlsx")
