@@ -5,7 +5,7 @@ import json
 file_path = "/Users/jacobposada/columbia/econ research/Project-Report-Format/"
 
 # specify Excel file formatted incorrectly 
-excel_file = "20-2018-OCI-MPP-ficha_resumen_url_table_1.xlsx"
+excel_file = "020-2023-OCI-5349-SCC-ficha_resumen_url_table_1.xlsx"
 
 # read Excel file into pandas dataframe 
 df = pd.read_excel(file_path + excel_file)
@@ -165,6 +165,7 @@ def parse_format_1(df):
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
+    df.iloc[8:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
     df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
@@ -183,6 +184,7 @@ def parse_format_2(df):
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
+    df.iloc[7:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
     df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
@@ -201,6 +203,7 @@ def parse_format_3(df):
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
+    df.iloc[10:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
     df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
@@ -218,6 +221,7 @@ def parse_format_4(df):
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
+    df.iloc[8:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
     df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
@@ -235,11 +239,12 @@ def parse_format_5(df):
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
+    df.iloc[9:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
     df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
 
     return df 
 
-df = parse_column_1(df) 
+df = parse_format_5(df) 
 df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
