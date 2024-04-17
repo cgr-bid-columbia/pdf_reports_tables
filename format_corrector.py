@@ -125,6 +125,30 @@ def parse_column_2_format_4(df):
     df.iloc[11, 2] += " " + df.iloc[12,2] 
     df.iloc[12,2] = "" 
 
+    # push empty rows to bottom 
+    df['value'] = sorted(df['value'], key=lambda x: x == '')
+
+    return df 
+
+def parse_column_2_format_5(df): 
+
+    # fill empty value rows with empty strings 
+    df.fillna({'value': ''}, inplace=True) 
+
+    # turn all value columns to strings 
+    df['value'] = df['value'].astype(str) 
+
+    # manually corrects and cleans rows 
+    df.iloc[1,2] += " " + df.iloc[2,2] + " " + df.iloc[3,2] 
+    df.iloc[2:4, 2] = "" 
+    df.iloc[8, 2] += df.iloc[9,2] 
+    df.iloc[9,2] = "" 
+    df.iloc[14,2] += df.iloc[15,2] 
+    df.iloc[15,2] = "" 
+    
+    # push empty rows to bottom 
+    df['value'] = sorted(df['value'], key=lambda x: x == '')
+
     return df 
 
 
@@ -191,6 +215,23 @@ def parse_format_4(df):
 
     # parse column 2 titled 'value' 
     df = parse_column_2_format_4(df) 
+
+    # relabel index column 
+    df.iloc[:, 0] = range(0, len(df['row'])) 
+
+    # write corrected dataframe back to an Excel sheet 
+    df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
+
+    return df 
+
+def parse_format_5(df): 
+## formats all columns, works for file format 2 
+    
+    # parse column 1 titled 'row' 
+    df = parse_column_1(df)
+
+    # parse column 2 titled 'value' 
+    df = parse_column_2_format_5(df) 
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
