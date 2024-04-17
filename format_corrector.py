@@ -198,6 +198,28 @@ def parse_column_2_format_7(df):
 
     return df 
 
+def parse_column_2_format_8(df): 
+
+    # fill empty value rows with empty strings 
+    df.fillna({'value': ''}, inplace=True) 
+
+    # turn all value columns to strings 
+    df['value'] = df['value'].astype(str) 
+
+    # manually corrects and cleans rows 
+    df.iloc[2,2] += " " + df.iloc[3,2] + " " + df.iloc[4,2] + " " + df.iloc[5,2] + " " + df.iloc[6,2] 
+    df.iloc[2:7,2] = "" 
+    df.iloc[10,2] += df.iloc[11,2] 
+    df.iloc[11,2] = "" 
+    df.iloc[16,2] += df.iloc[17,2] 
+    df.iloc[17,2] = "" 
+    
+    # push empty rows to bottom 
+    df['value'] = sorted(df['value'], key=lambda x: x == '')
+
+    return df 
+
+
 ### FUNCTIONS TO FORMAT ENTIRE TABLE BY FORMAT TYPE 
 
 def parse_format_1(df): 
@@ -214,7 +236,7 @@ def parse_format_1(df):
     df.iloc[8:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
-    df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
+    df.to_excel(file_path + excel_file[:-5] + "_parsed.xlsx", index=False) 
 
     return df 
 
@@ -233,7 +255,7 @@ def parse_format_2(df):
     df.iloc[7:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
-    df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
+    df.to_excel(file_path + excel_file[:-5] + "_parsed.xlsx", index=False) 
 
     return df 
 
@@ -252,7 +274,7 @@ def parse_format_3(df):
     df.iloc[10:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
-    df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
+    df.to_excel(file_path + excel_file[:-5] + "_parsed.xlsx", index=False) 
 
     return df 
 
@@ -270,7 +292,7 @@ def parse_format_4(df):
     df.iloc[8:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
-    df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
+    df.to_excel(file_path + excel_file[:-5] + "_parsed.xlsx", index=False) 
 
     return df 
 
@@ -288,7 +310,7 @@ def parse_format_5(df):
     df.iloc[9:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
-    df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
+    df.to_excel(file_path + excel_file[:-5] + "_parsed.xlsx", index=False) 
 
     return df 
 
@@ -303,10 +325,10 @@ def parse_format_6(df):
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
-    df.iloc[len(df['row']):, 0] = None 
+    df.iloc[6:, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
-    df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
+    df.to_excel(file_path + excel_file[:-5] + "_parsed.xlsx", index=False) 
 
     return df 
 
@@ -318,6 +340,24 @@ def parse_format_7(df):
 
     # parse column 2 titled 'value' 
     df = parse_column_2_format_7(df) 
+
+    # relabel index column 
+    df.iloc[:, 0] = range(0, len(df['row'])) 
+    df.iloc[9:, 0] = None 
+
+    # write corrected dataframe back to an Excel sheet 
+    df.to_excel(file_path + excel_file[:-5] + "_parsed.xlsx", index=False) 
+
+    return df 
+
+def parse_format_8(df): 
+## formats all columns, works for file format 7 
+    
+    # parse column 1 titled 'row' 
+    df = parse_column_1(df)
+
+    # parse column 2 titled 'value' 
+    df = parse_column_2_format_8(df) 
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
