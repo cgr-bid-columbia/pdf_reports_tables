@@ -5,7 +5,7 @@ import json
 file_path = "/Users/jacobposada/columbia/econ research/Project-Report-Format/"
 
 # specify Excel file formatted incorrectly 
-excel_file = "020-2023-OCI-5340-SOO-ficha_resumen_url_table_1.xlsx"
+excel_file = "020-2023-OCI-5303-SCC-ficha_resumen_url_table_1.xlsx"
 
 # read Excel file into pandas dataframe 
 df = pd.read_excel(file_path + excel_file)
@@ -35,7 +35,7 @@ def parse_column_1(df):
             # add cell to current phrase until colon is found 
             current_phrase += cell_value + " "
             # replace incomplete rows with empty strings 
-            df.at[index, 'row'] = "" 
+            df.at[index, 'row'] = None 
        
     # brings non-empty rows to the top, maintaining their order 
     df['row'] = sorted(df['row'], key=lambda x: x == '')
@@ -119,11 +119,16 @@ def parse_column_2_format_4(df):
     df['value'] = df['value'].astype(str) 
 
     # manually corrects and cleans rows 
-    df.iloc[1,2] += " " + df.iloc[2,2] + " " + df.iloc[3,2] + " " + df.iloc[4,2] + " " + df.iloc[5,2] + " " + df.iloc[6,2] 
+    df.iloc[1,2] += " " + df.iloc[2,2] + " " + df.iloc[3,2] + " " + df.iloc[4,2] + " " + df.iloc[5,2] + " " + df.iloc[6,2] + " " + df.iloc[7,2]
     df.iloc[2,2] = " "
-    df.iloc[3:7, 2] = "" 
+    df.iloc[3:8, 2] = ""
     df.iloc[11, 2] += " " + df.iloc[12,2] 
     df.iloc[12,2] = "" 
+    try: 
+        df.iloc[17,2] += " " + df.iloc[18,2] 
+        df.iloc[18,2] = "" 
+    except: 
+        pass 
 
     # push empty rows to bottom 
     df['value'] = sorted(df['value'], key=lambda x: x == '')
@@ -170,6 +175,28 @@ def parse_column_2_format_6(df):
 
     return df 
 
+def parse_column_2_format_7(df): 
+
+    # fill empty value rows with empty strings 
+    df.fillna({'value': ''}, inplace=True) 
+
+    # turn all value columns to strings 
+    df['value'] = df['value'].astype(str) 
+
+    # manually corrects and cleans rows 
+    df.iloc[1,2] += " " + df.iloc[2,2] + " " + df.iloc[3,2] + " " + df.iloc[4,2] 
+    df.iloc[2:5,2] = "" 
+    df.iloc[5,2] += " " + df.iloc[6,2] + " " + df.iloc[7,2] + " " + df.iloc[8,2] + " " + df.iloc[9,2] 
+    df.iloc[6:10,2] = "" 
+    df.iloc[13,2] += df.iloc[14,2] 
+    df.iloc[14,2] = "" 
+    df.iloc[19,2] += df.iloc[20,2] 
+    df.iloc[20,2] = "" 
+    
+    # push empty rows to bottom 
+    df['value'] = sorted(df['value'], key=lambda x: x == '')
+
+    return df 
 
 ### FUNCTIONS TO FORMAT ENTIRE TABLE BY FORMAT TYPE 
 
@@ -266,7 +293,7 @@ def parse_format_5(df):
     return df 
 
 def parse_format_6(df): 
-## formats all columns, works for file format 2 
+## formats all columns, works for file format 6 
     
     # parse column 1 titled 'row' 
     df = parse_column_1(df)
@@ -276,12 +303,29 @@ def parse_format_6(df):
 
     # relabel index column 
     df.iloc[:, 0] = range(0, len(df['row'])) 
-    df.iloc[6:, 0] = None 
+    df.iloc[len(df['row']):, 0] = None 
 
     # write corrected dataframe back to an Excel sheet 
     df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
 
     return df 
 
-df = parse_format_6(df) 
-df.to_excel(file_path + excel_file + "_parsed.xlsx", index=False) 
+def parse_format_7(df): 
+## formats all columns, works for file format 7 
+    
+    # parse column 1 titled 'row' 
+    df = parse_column_1(df)
+
+    # parse column 2 titled 'value' 
+    df = parse_column_2_format_7(df) 
+
+    # relabel index column 
+    df.iloc[:, 0] = range(0, len(df['row'])) 
+    df.iloc[9:, 0] = None 
+
+    # write corrected dataframe back to an Excel sheet 
+    df.to_excel(file_path + excel_file[:-5] + "_parsed.xlsx", index=False) 
+
+    return df 
+
+df = parse_format_7(df) 
