@@ -1,86 +1,116 @@
-from Levenshtein import distance
 from tqdm import tqdm
 from glob import glob
+from itertools import groupby
 import pandas as pd
 import math
 
-def table_1_parser(excel_file: str, formatted_names: list) -> pd.DataFrame:
+def find_consecutive_values(list_data: list) -> list:
+    """
+    Return consecutive values in list of integers
+    """
+    
+    # enumerate and get differences between counter—integer pairs
+    # group by differences (consecutive integers have equal differences)  
+    groups_by_diffs = groupby(enumerate(list_data), key=lambda item: item[0] - item[1])
+    
+    # repack elements from each group into list
+    all_groups = ([index[1] for index in group] for _, group in groups_by_diffs)
+    
+    # obtain out one element lists 
+    output = list(filter(lambda x: len(x) > 1, all_groups))
+
+    return output
+
+
+def table_1_indexes_nans(excel_file: str) -> tuple:
+    """
+    Returns the indexes of all rows w consecutive nan values,
+    of the headers they correspond to and the remaining headers
+    """
 
     # reading file
     data = pd.read_excel(excel_file)
 
-    corrected_data = {"name": [], "value": []} # placeholder for the corrected data
-    length_of_df = len(data) # getting the length of the dataframe for iterations
-    
-    for index, row in data.iterrows(): # fixing issues in column with table values
+    # finding indexes of all nans in first column (col "row")
+    indexes_nans = []
+    for index, row in data.iterrows(): 
+        if str(row["row"]) == "nan": 
+            indexes_nans.append(index)
+
+    # finding indexes of all rows with consecutive nans
+    indexes_consec_nans = find_consecutive_values(indexes_nans)
+
+    # obtaining indexes of headers to fix
+    headers_to_fix_indexes = []
+    for indexes in indexes_consec_nans:
+        headers_to_fix_indexes.append(indexes[0] - 1)
+
+    # obtaining indexes of remaining headers
+    remaining_indexes = [index for index in list(range(len(data))) if index not in indexes_nans 
+                         and index not in headers_to_fix_indexes]
+
+    return indexes_consec_nans, headers_to_fix_indexes, remaining_indexes
+
+
+def table_1_collapse_nans(excel_file: str, indexes_consec_nans: list, headers_to_fix_indexes: list, remaining_indexes: list) -> pd.DataFrame:
+    """
+    Creates a new dataframe after collapsing all the nan rows 
+    into their corresponding headers
+    """
+
+    # reading file
+    data = pd.read_excel(excel_file)
+
+    # defining the indexes w headers
+    header_indexes = headers_to_fix_indexes + remaining_indexes
+    header_indexes.sort()
+
+    collapsed_df = [] # placeholder for final df
+    index_consec_indexes = 0 # index of consecutive indexes list
+    for index in header_indexes:
         
-        row_is_header = (row["row"] != "") and (row["value"] != "") # detecting rows w header values
+        if index in remaining_indexes: # adding the headers that don't need fix
+            current_vals = {
+                "name": data.iloc[index, data.columns.get_loc("row")],
+                "value": data.iloc[index, data.columns.get_loc("value")]
+            }
 
-        if row_is_header: # working only w header values
+        else: # headers that need to be fixed
+            current_vals = {
+                "name": data.iloc[index, data.columns.get_loc("row")],
+            }
 
-            current_name = row["row"] # placeholder for the value of the name column after fixes
-            current_value = row["value"] # placeholder for the value of the name column after fixes
+            # collapsing value of current header
+            collapsed_value = ""
+            indexes_w_value = [index] + indexes_consec_nans[index_consec_indexes]
+            for index in indexes_w_value:
+                collapsed_value += str(data.iloc[index, data.columns.get_loc("value")]) + " "
 
-            if index + 1 < length_of_df: # checking if there are more post rows to iterate on dataset
-                sub_index = index + 1
-            
-                # defining conditions for the fix implemented on while loop
-                available_name = str(data.loc[sub_index, "row"]) != "nan"
-                available_data = str(data.loc[sub_index, "value"]) != "nan"
-
-                while not available_name and available_data and sub_index < length_of_df: # detecting rows w empty names and w data
-                    current_value += " " + data.loc[sub_index, "value"]
-                    
-                    if sub_index + 1 <= length_of_df: # checking if there are more rows to iterate
-                        sub_index += 1 # updating sub_index and conditions
-                        available_name = str(data.loc[sub_index, "row"]) != "nan"
-                        available_data = str(data.loc[sub_index, "value"]) == "nan"
-                
-            corrected_data["name"].append(current_name)
-            corrected_data["value"].append(current_value)
-
-    print("--- post first fix ---")
-    print("corrected_data['name'] length: ", len(corrected_data['name']))
-    print("corrected_data['value'] length: ", len(corrected_data['value']))
-    print("corrected_data['name']: ", corrected_data['name'])
-    print("corrected_data['value']: ", corrected_data['value'])
-
-    # fixing issues in column with table names
-    corrected_names = [] # placeholder for the fixed names
-    formatted_names_aux = formatted_names.copy() # creating a copy of the formatted names to simplify the search
-    for item in corrected_data["name"]:
+            index_consec_indexes += 1 # updating index for next consecutive indexes list
+            current_vals["value"] = collapsed_value # storing collapsed value
         
-        if len(formatted_names_aux) > 1: # checking if there are more than one name to compare
-            lev_distances = [] 
-            for name in formatted_names_aux: # calculating levensthein distances to actual names
-                lev_distances.append(distance(item, name))
-                
-            min_index = lev_distances.index(min(lev_distances)) # getting the index of the minimum distance
-            corrected_names.append(formatted_names_aux[min_index]) # appending the fixed name
-            formatted_names_aux.remove(formatted_names_aux[min_index]) # removing the used name to simplify the next search
-        else:
-            corrected_names.append(formatted_names_aux[0])
+        collapsed_df.append(current_vals) # stacking dicts w data
 
-    corrected_data["name"] = corrected_names
+    collapsed_df = pd.DataFrame(collapsed_df)
 
-    print("--- post second fix ---")
-    print("corrected_data['name'] length: ", len(corrected_data['name']))
-    print("corrected_data['value'] length: ", len(corrected_data['value']))
-    print("corrected_data['name']: ", corrected_data['name'])
-    print("corrected_data['value']: ", corrected_data['value'])
-
-    return corrected_data
+    return collapsed_df
 
 
 if __name__ == "__main__":
-    input_path = r"D:\Descargas\PDF tables aux\Original"
+    input_path = r"/Users/mg4558/Downloads/second_round_jacob"
+    output_path = r"/Users/mg4558/Downloads/second_round_jacob/output_test"
     files_paths = glob(input_path + "/*.xlsx", recursive=True) # reading pdfs from input path
-    corrected_names = ["N° de informe", "Título del informe", "Detalle", "Entidad auditada", "Monto de la materia de control", "Ubigeo", "Fecha de emisión de informe", "Unidad orgánica que emite el informe"]
-
+    
+    file_counter = 0
     for item in tqdm(files_paths[:2]):
         print("item: ", item)
-        output = table_1_parser(item, corrected_names)
-        file_name = item.split("\\")[-1].split(".")[0]
-        print("file_name: ", file_name)
+        indexes_consec_nans, headers_to_fix_indexes, remaining_indexes = table_1_indexes_nans(item)
 
-        pd.DataFrame(output).to_excel(r"D:\Descargas\PDF tables aux\Parsed" + r"\\" + file_name + "_formatted" + ".xlsx", index=False)
+        print("indexes_consec_nans: ", indexes_consec_nans)
+        print("headers_to_fix_indexes: ", headers_to_fix_indexes)
+        print("remaining_indexes: ", remaining_indexes)
+
+        parsing_layer_1 = table_1_collapse_nans(item, indexes_consec_nans, headers_to_fix_indexes, remaining_indexes)
+        parsing_layer_1.to_excel(output_path + f"/test_{file_counter}.xlsx")
+
+        file_counter += 1
