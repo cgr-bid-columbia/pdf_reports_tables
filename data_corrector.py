@@ -2,7 +2,29 @@
 from tqdm import tqdm
 from glob import glob
 import pandas as pd
-import math, unicodedata
+import math, unicodedata, logging, json, os
+
+JSON_FILE = "paths.json"
+pdf_tables_file = open(JSON_FILE, "r")
+pdf_tables_dict = json.load(pdf_tables_file)
+TASK_ID = os.environ.get("SLURM_ARRAY_TASK_ID")
+LOGS_FOLDER = "./logs"
+LOGNAME = f"/data_corrector_{TASK_ID}.log"
+NUM_JOBS = pdf_tables_dict["num_jobs"]
+
+logging.basicConfig(filename=LOGS_FOLDER + LOGNAME,
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.INFO)
+
+
+def divide_chunks(list_input: list, num_chunks: int) -> list:
+    """
+    Divides list into chucks of size num_chunks
+    """
+    for index in range(0, len(list_input), num_chunks):
+        yield list_input[index:index + num_chunks]
 
 
 def remove_accents_and_lowercase(input_str):
@@ -130,7 +152,8 @@ def table_1_data_corrector(csv_file: str, output_path: str) -> pd.DataFrame:
             num_empty_vals_formatted += 1
 
     formatted_data = pd.DataFrame(formatted_data) # converting formatted data to dataframe
-    file_name = csv_file.split("\\")[-1].split(".")[0] # getting the name of the file | TODO: change for linux
+    # file_name = csv_file.split("\\")[-1].split(".")[0] # getting the name of the file | Windows
+    file_name = csv_file.split("/")[-1].split(".")[0] # getting the name of the file | Linux
     formatted_data.to_csv(output_path + f"/{file_name}.csv", sep="|", index=False) # exporting formatted data
 
     # sorting unmatched cols
@@ -154,19 +177,23 @@ def table_1_data_corrector(csv_file: str, output_path: str) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    input_path = r"D:\Accesos directos\Trabajo\Columbia\Denuncias\Reports\scraped_reports\table_1_parsed"
-    files_paths = glob(input_path + "/*.csv", recursive=True) # reading pdfs from input path
+
+    # read paths
+    input_path = pdf_tables_dict["input_path"] 
+    output_path = pdf_tables_dict["output_path"]
     
+    files_paths = glob(input_path + "/*.csv", recursive=True) # reading pdfs from input path
+    paths_splitted = list(divide_chunks(files_paths, int(len(files_paths)/NUM_JOBS)))
+    paths_for_job = paths_splitted[int(TASK_ID)-1]
+
     formatting_reports = []
-    output_path = input_path + r"\formatted_data"
-    for item in tqdm(files_paths):
+    for item in tqdm(paths_for_job):
         if "~" not in item and "parsing_reports" not in item:
             current_report = table_1_data_corrector(item, output_path)
     
             formatting_reports.append(pd.DataFrame(current_report))
     
     # exporting formatting reports
-    pd.DataFrame(pd.concat(formatting_reports)).to_csv(output_path + r"\formatting_reports.csv", sep="|", index=False)
-
+    pd.DataFrame(pd.concat(formatting_reports)).to_csv(output_path + r"\formatting_reports" + f"_{TASK_ID}.csv", sep="|", index=False)
 
     # pd.DataFrame(output).to_excel(r"D:\Descargas\PDF tables aux\Parsed" + r"\\" + file_name + "_formatted" + ".xlsx", index=False)

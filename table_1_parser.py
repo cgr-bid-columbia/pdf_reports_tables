@@ -238,8 +238,8 @@ def parse_table_1(file_path: str, output_path: str, output_sufix="_parsed") -> p
         parsing_layer_2 = pd.concat([parsing_layer_2, file_df], ignore_index=True)
 
         # write corrected dataframe back to an Excel sheet 
-        file_name = file_path.split("/")[-1].split(".")[0].split("\\")[-1]
-        # file_name = file_path.split("/")[-1].split(".")[0]
+        # file_name = file_path.split("/")[-1].split(".")[0].split("\\")[-1]
+        file_name = file_path.split("/")[-1].split(".")[0]
         parsing_layer_2.to_csv(output_path + "/" + file_name + output_sufix + ".csv", sep="|", index=False)
 
         output_report["status"] = "parsed" # update status of the parsing
@@ -269,7 +269,7 @@ if __name__ == "__main__":
     first_tables_paths = [path for path in files_paths if "table_1" in path and "raw" not in path]
 
     # splitting paths into lists that can be evaluated per job
-    TASK_ID = 1
+    # TASK_ID = 1
     paths_splitted = list(divide_chunks(first_tables_paths, int(len(first_tables_paths)/NUM_JOBS)))
     paths_for_job = paths_splitted[int(TASK_ID)-1]
 
