@@ -179,20 +179,30 @@ def table_1_collapse_colons(data: pd.DataFrame, indexes_no_colons_grouped: list,
             }
 
         else: # concatenating headers that need to be fixed
-            
-            current_vals = { # storing data from "value" column
-                "value": data.iloc[index, data.columns.get_loc("value")],
-            }
 
-            collapsed_name = "" # placeholder for collapsed value
-            for index_val in indexes_no_colons_grouped[group_index]: # collapsing names of current header
+            current_vals = {} # placeholder for current header values
+
+            # collapsing name of current header
+            collapsed_name = "" 
+            for index_val in indexes_no_colons_grouped[group_index]: 
                 collapsed_name += str(data.iloc[index_val, data.columns.get_loc("name")]) + " "
+            current_vals["name"] = collapsed_name # storing collapsed name
 
-            group_index += 1 # updating index for next consecutive indexes list
-            current_vals["name"] = collapsed_name # storing collapsed value
+            # collapsing value of current header
+            collapsed_value = "" 
+            for index_val in indexes_no_colons_grouped[group_index]: 
+                current_value = str(data.iloc[index_val, data.columns.get_loc("value")]) # getting current value
+                
+                if current_value == "nan": # handling missings
+                    current_value = ""
+                
+                collapsed_value += current_value + " " # collapsing values of current header
+            current_vals["value"] = collapsed_value.strip() # storing collapsed value w/out unwanted spaces
             
+            group_index += 1 # updating index for next consecutive indexes list
+
         collapsed_df.append(current_vals) # stacking dicts w data
-        
+
     collapsed_df = pd.DataFrame(collapsed_df)
 
     return collapsed_df
@@ -215,10 +225,11 @@ def parse_table_1(file_path: str, output_path: str, output_sufix="_parsed") -> p
         # collapsing rows w nans on "value" column
         parsing_layer_1 = table_1_collapse_nans(file_path, indexes_consec_nans, headers_to_fix_indexes, remaining_indexes)
         
+
         ## second layer: parsing "name" column
         # obtaining indexes of rows w colons at the end on "name" column
         indexes_no_colons_grouped, indexes_colons = table_1_get_indexes_for_collapse(parsing_layer_1)
-        
+
         # collapsing rows w/out colons at the end on "name" column
         parsing_layer_2 = table_1_collapse_colons(parsing_layer_1, indexes_no_colons_grouped, indexes_colons)
 
@@ -227,8 +238,9 @@ def parse_table_1(file_path: str, output_path: str, output_sufix="_parsed") -> p
         parsing_layer_2 = pd.concat([parsing_layer_2, file_df], ignore_index=True)
 
         # write corrected dataframe back to an Excel sheet 
-        file_name = file_path.split("/")[-1].split(".")[0]
-        parsing_layer_2.to_excel(output_path + "/" + file_name + output_sufix + ".xlsx", index=False)
+        file_name = file_path.split("/")[-1].split(".")[0].split("\\")[-1]
+        # file_name = file_path.split("/")[-1].split(".")[0]
+        parsing_layer_2.to_csv(output_path + "/" + file_name + output_sufix + ".csv", sep="|", index=False)
 
         output_report["status"] = "parsed" # update status of the parsing
         output_report["errors"] = "-" # update status of the parsing
@@ -254,10 +266,10 @@ if __name__ == "__main__":
     files_paths = glob(input_path + "/*.xlsx", recursive=True) # reading excels from input path
 
     # run function `parse_table_1` on all the excel files that contain "first_table" string
-    first_tables_paths = [path for path in files_paths if "table_1" in path.lower() and "raw" not in path.lower()][:6]
+    first_tables_paths = [path for path in files_paths if "table_1" in path and "raw" not in path]
 
     # splitting paths into lists that can be evaluated per job
-    #TASK_ID = 1
+    TASK_ID = 1
     paths_splitted = list(divide_chunks(first_tables_paths, int(len(first_tables_paths)/NUM_JOBS)))
     paths_for_job = paths_splitted[int(TASK_ID)-1]
 
@@ -270,5 +282,5 @@ if __name__ == "__main__":
         output_report_df = pd.DataFrame.from_dict(output_report, orient="index").transpose()
         list_reports.append(output_report_df)
     
-    pd.concat(list_reports).to_excel(output_path + f"/parsing_reports_job_{TASK_ID}.xlsx", index=False) # saving parsing reports
+    pd.concat(list_reports).to_csv(output_path + f"/parsing_reports_job_{TASK_ID}.csv", sep="|", index=False) # saving parsing reports
     logging.info(f"ending the parsing of table 1 files")
