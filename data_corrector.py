@@ -67,7 +67,8 @@ def table_1_data_corrector(csv_file: str, output_path: str) -> pd.DataFrame:
     num_empty_vals_formatted = 0 # counter of empty vals
 
     for col in cols_list:
-        name_found = False
+        
+        name_found = False # placeholder for name found flag (update if found)
 
         if ("n de" in col or "codigo" in col) and ("doc_number" in unmatched_new_vars): # formatting "n de" as "doc_number"
             formatted_data["name"].append("doc_number")
@@ -156,13 +157,6 @@ def table_1_data_corrector(csv_file: str, output_path: str) -> pd.DataFrame:
                 formatted_data["value"].append("oficio")
             else:
                 formatted_data["value"].append("unspecified")
-
-        # if len(formatted_data['name']) != len(formatted_data['value']):
-        #     print(f"names: {formatted_data['name']}")
-        #     print(f"values: {formatted_data['value']}")
-            
-        # print(f"len names: {len(formatted_data['name'])}")
-        # print(f"len values: {len(formatted_data['value'])}")
 
 
     # adding rows for new variable names with no values
