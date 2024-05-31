@@ -141,6 +141,13 @@ def table_1_data_corrector(csv_file: str, output_path: str) -> pd.DataFrame:
             else:
                 formatted_data["value"].append("unspecified")
 
+        if len(formatted_data['name']) != len(formatted_data['value']):
+            print(f"names: {formatted_data['name']}")
+            print(f"values: {formatted_data['value']}")
+            
+        print(f"len names: {len(formatted_data['name'])}")
+        print(f"len values: {len(formatted_data['value'])}")
+
         unmatched_cols.remove(col) # removing matched cols from list of unmatched cols
 
     # adding rows for new variable names with no values
