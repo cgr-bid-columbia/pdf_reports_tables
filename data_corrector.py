@@ -2,7 +2,7 @@
 from tqdm import tqdm
 from glob import glob
 import pandas as pd
-import math, unicodedata, logging, json, os
+import  unicodedata, logging, json, os
 
 JSON_FILE = "paths.json"
 pdf_tables_file = open(JSON_FILE, "r")
@@ -57,94 +57,93 @@ def table_1_data_corrector(csv_file: str, output_path: str) -> pd.DataFrame:
         cols_mapping[updated_col_name] = col
         cols_list.append(updated_col_name)
         
-
-    benchmark_cols = [
-        "n de", # informe u oficio
-        "codigo", # investment code of the project
-        "titulo", 
-        "objeto", # same as "asunto"/"detalle" in other versions of the table
-        "detalle", # same as "asunto"/"objeto" in other versions of the table
-        "asunto", # same as "detalle"/"objeto" in other versions of the table
-        "descripcion", # more detailed "asunto"/"detalle"
-        "entidad", # same as "entidad auditada" in older versions of the table
-        "ubigeo",
-        "monto",
-        "fecha de emision",
-        "unidad organica", # same as "entidad unidad organica que emite el" + "informe"/"oficio" in older versions of the table
-        "original file"
-    ]
+    new_vars = ["doc_number", "title", "investment_code", "subject", "description", "entity", "ubigeo", "amount", "issue_date", "organic_unit", "path"]
 
     # formatting data
-    matched_cols = []
-    # matched_cols_dict = {"original_col": [], "matched_bench_col": []}
+    num_matched_cols = 0
     formatted_data = {"name": [], "value": []}
     unmatched_cols = cols_list.copy() # placeholder for unmatched columns
-    unmatched_bench_cols = benchmark_cols.copy() # placeholder for unmatched benchmark columns
+    unmatched_new_vars = new_vars.copy() # placeholder for unmatched benchmark columns
     num_empty_vals_formatted = 0 # counter of empty vals
+
     for col in cols_list:
-        for bench_col in unmatched_bench_cols:
-            if bench_col in col:
+        if ("n de" in col or "codigo" in col) and ("doc_number" in unmatched_new_vars): # formatting "n de" as "doc_number"
+            formatted_data["name"].append("doc_number")
+            unmatched_new_vars.remove("doc_number")
+            num_matched_cols += 1
 
-                matched_cols.append(col) # storing matched cols
-                unmatched_cols.remove(col) # removing matched cols from unmatched cols
+        elif ("titulo" in col) and ("title" in unmatched_new_vars): # formatting "titulo" as "title"
+            formatted_data["name"].append("title")
+            unmatched_new_vars.remove("title")
+            num_matched_cols += 1
 
-                if "n de" in col or "codigo" in col: # formatting "n de" as "doc_number"
-                    formatted_data["name"].append("doc_number")
+        elif ("codigo" in col) and ("investment_code" in unmatched_new_vars): # formatting "codigo" as "investment_code"
+            formatted_data["name"].append("investment_code")
+            unmatched_new_vars.remove("investment_code")
+            num_matched_cols += 1
 
-                elif "titulo" in col: # formatting "titulo" as "title"
-                    formatted_data["name"].append("title")
+        elif ("detalle" in col or "asunto" in col or "objetivo" in col or "objeto" in col) and ("subject" in unmatched_new_vars): # formatting "detalle" as "subject"
+            formatted_data["name"].append("subject")
+            unmatched_new_vars.remove("subject")
+            num_matched_cols += 1
 
-                elif "codigo" in col: # formatting "codigo" as "investment_code"
-                    formatted_data["name"].append("investment_code")
+        elif ("descripcion" in col) and ("description" in unmatched_new_vars): # formatting "descripcion" as "description"
+            formatted_data["name"].append("description")
+            unmatched_new_vars.remove("description")
+            num_matched_cols += 1
+        
+        elif ("entidad" in col) and ("entity" in unmatched_new_vars): # formatting "entidad" as "entity"
+            formatted_data["name"].append("entity")
+            unmatched_new_vars.remove("entity")
+            num_matched_cols += 1
 
-                elif "detalle" in col or "asunto" in col or "objeto" in col: # formatting "detalle" as "subject"
-                    formatted_data["name"].append("subject")
+        elif ("ubigeo" in col) and ("ubigeo" in unmatched_new_vars): # formatting "ubigeo" as "ubigeo"
+            formatted_data["name"].append("ubigeo")
+            unmatched_new_vars.remove("ubigeo")
+            num_matched_cols += 1
+        
+        elif ("monto" in col) and ("amount" in unmatched_new_vars): # formatting "monto" as "amount"
+            formatted_data["name"].append("amount")
+            unmatched_new_vars.remove("amount")
+            num_matched_cols += 1
+        
+        elif ("fecha de emision" in col) and ("issue_date" in unmatched_new_vars): # formatting "fecha de emision" as "issue_date"
+            formatted_data["name"].append("issue_date")
+            unmatched_new_vars.remove("issue_date")
+            num_matched_cols += 1
+        
+        elif ("unidad organica" in col) and ("organic_unit" in unmatched_new_vars): # formatting "unidad organica" as "organic_unit"
+            formatted_data["name"].append("organic_unit")
+            unmatched_new_vars.remove("organic_unit")
+            num_matched_cols += 1
 
-                elif "descripcion" in col: # formatting "descripcion" as "description"
-                    formatted_data["name"].append("description")
-                
-                elif "entidad" in col: # formatting "entidad" as "entity"
-                    formatted_data["name"].append("entity")
+        elif ("original file" in col) and ("path" in unmatched_new_vars): # formatting "original file" as "path"
+            formatted_data["name"].append("path")
+            unmatched_new_vars.remove("path")
+            num_matched_cols += 1
 
-                elif "ubigeo" in col: # formatting "ubigeo" as "ubigeo"
-                    formatted_data["name"].append("ubigeo")
-                
-                elif "monto" in col: # formatting "monto" as "amount"
-                    formatted_data["name"].append("amount")
-                
-                elif "fecha de emision" in col: # formatting "fecha de emision" as "issue_date"
-                    formatted_data["name"].append("issue_date")
-                
-                elif "unidad organica" in col: # formatting "unidad organica" as "organic_unit"
-                    formatted_data["name"].append("organic_unit")
+        # storing the var value
+        var_value = data[data["name"] == cols_mapping[col]]["value"].iloc[0] # getting the value of the variable
+        if str(var_value) == "nan": # handling missing values
+            var_value = ""
+        formatted_data["value"].append(var_value) # appending the value of the variable
+        
+        if var_value == "": # counting empty values
+            num_empty_vals_formatted += 1
 
-                elif "original file" in col: # formatting "original file" as "path"
-                    formatted_data["name"].append("path")
+        # storing the doc type
+        if "titulo" in col and "doc_type" not in formatted_data["name"]: # detecting the doc type from the title var
+            formatted_data["name"].append("doc_type")
+            if "informe" in col:
+                formatted_data["value"].append("informe")
+            elif "oficio" in col:
+                formatted_data["value"].append("oficio")
+            else:
+                formatted_data["value"].append("unspecified")
 
-                # storing the var value
-                var_value = data[data["name"] == cols_mapping[col]]["value"].iloc[0] # getting the value of the variable
-                if str(var_value) == "nan": # handling missing values
-                    var_value = ""
-                formatted_data["value"].append(var_value) # appending the value of the variable
-                
-                if var_value == "": # counting empty values
-                    num_empty_vals_formatted += 1
-
-                # storing the doc type
-                if "titulo" in col and "doc_type" not in formatted_data["name"]: # detecting the doc type from the title var
-                    formatted_data["name"].append("doc_type")
-                    if "informe" in col:
-                        formatted_data["value"].append("informe")
-                    elif "oficio" in col:
-                        formatted_data["value"].append("oficio")
-                    else:
-                        formatted_data["value"].append("unspecified")
-
-                unmatched_bench_cols.remove(bench_col)
-                break
+        unmatched_cols.remove(col) # removing matched cols from list of unmatched cols
 
     # adding rows for new variable names with no values
-    new_vars = ["doc_number", "title", "investment_code", "subject", "description", "entity", "ubigeo", "amount", "issue_date", "organic_unit", "path"]
     for var in new_vars:
         if var not in formatted_data["name"]:
             formatted_data["name"].append(var)
@@ -154,22 +153,21 @@ def table_1_data_corrector(csv_file: str, output_path: str) -> pd.DataFrame:
     formatted_data = pd.DataFrame(formatted_data) # converting formatted data to dataframe
     # file_name = csv_file.split("\\")[-1].split(".")[0] # getting the name of the file | Windows
     file_name = csv_file.split("/")[-1].split(".")[0] # getting the name of the file | Linux
+    print(f"file_name: {file_name}")
     formatted_data.to_csv(output_path + f"/{file_name}.csv", sep="|", index=False) # exporting formatted data
 
     # sorting unmatched cols
     unmatched_cols.sort()
-    unmatched_bench_cols.sort()
 
 
     report = {
         "num_cols": [len(cols_list)],
-        "num_matched_cols": [len(matched_cols)],
-        "perc_matched_cols": [round(len(matched_cols) / len(cols_list) * 100, 2)],
+        "num_matched_cols": [num_matched_cols],
+        "perc_matched_cols": [round(num_matched_cols/ len(cols_list) * 100, 2)],
         "num_unmatched_cols": [len(unmatched_cols)],
         "unmatched_cols": [str(unmatched_cols)],
-        "unmatched_bench_cols": [str(unmatched_bench_cols)],
-        "num_empty_vals_formatted": [num_empty_vals_formatted], 
-        "perc_empty_vals_formatted": [round(num_empty_vals_formatted / len(new_vars) * 100, 2)], 
+        "num_unmatched_new_cols": [len(unmatched_new_vars)],
+        "unmatched_new_cols": [str(unmatched_new_vars)],
         "file_path": [data[data["name"] == "Original file"]["value"].values[0]] # storing var value
     }
 
@@ -195,5 +193,3 @@ if __name__ == "__main__":
     
     # exporting formatting reports
     pd.DataFrame(pd.concat(formatting_reports)).to_csv(output_path + r"\formatting_reports" + f"_{TASK_ID}.csv", sep="|", index=False)
-
-    # pd.DataFrame(output).to_excel(r"D:\Descargas\PDF tables aux\Parsed" + r"\\" + file_name + "_formatted" + ".xlsx", index=False)
