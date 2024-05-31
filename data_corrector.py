@@ -153,7 +153,6 @@ def table_1_data_corrector(csv_file: str, output_path: str) -> pd.DataFrame:
     formatted_data = pd.DataFrame(formatted_data) # converting formatted data to dataframe
     # file_name = csv_file.split("\\")[-1].split(".")[0] # getting the name of the file | Windows
     file_name = csv_file.split("/")[-1].split(".")[0] # getting the name of the file | Linux
-    print(f"file_name: {file_name}")
     formatted_data.to_csv(output_path + f"/{file_name}.csv", sep="|", index=False) # exporting formatted data
 
     # sorting unmatched cols
