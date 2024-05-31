@@ -200,7 +200,7 @@ if __name__ == "__main__":
     paths_for_job = paths_splitted[int(TASK_ID)-1]
 
     formatting_reports = []
-    for item in tqdm(paths_for_job[:20]):
+    for item in tqdm(paths_for_job):
         if "~" not in item and "parsing_reports" not in item:
             current_report = table_1_data_corrector(item, output_path)
             formatting_reports.append(pd.DataFrame(current_report))
