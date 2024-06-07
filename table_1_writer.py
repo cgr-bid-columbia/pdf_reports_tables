@@ -1,5 +1,5 @@
 # CREATE TABLE table_1_reports_metatada (
-#     id SERIAL PRIMARY KEY,
+#     id VARCHAR(32) PRIMARY KEY,
 #     doc_number VARCHAR(100),
 #     doc_type VARCHAR(100),
 #     title TEXT,
@@ -14,7 +14,7 @@
 #     path TEXT,
 #     batch_id INTEGER
 # );
-import os, psycopg2, hashlib, json, logging
+import os, psycopg2, hashlib, json, logging, re
 from tqdm import tqdm
 from glob import glob
 import pandas as pd
@@ -30,7 +30,7 @@ csv_tables_dict = json.load(csv_tables_file)
 
 # setting up logging
 logging.basicConfig(filename=LOGS_FOLDER + LOGNAME,
-                    filemode='a',
+                    filemode='w+',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.INFO)
@@ -89,13 +89,18 @@ def process_item(item: dict, conn: object):
     insert_statement = generate_insert(fields_list, values_list)
     
     cursor = conn.cursor()
-    cursor.execute(insert_statement)
+    try:
+        cursor.execute(insert_statement)
+    except Exception as ex:
+        logging.error(f"process_item: error with insert statement {insert_statement}")
+        raise ex
+
     conn.commit()
 
     logging.info(f"process_item: item successfully writing")
 
 
-def write_file_to_psql(csv_path: str, batch_id: int, conn: object):
+def write_file_to_psql(csv_path: str, batch_id: int, conn: object, file_id: int):
     """
     Reads a csv file and writes the data to the specified table
     """
@@ -109,15 +114,21 @@ def write_file_to_psql(csv_path: str, batch_id: int, conn: object):
     item = {}
     for var_val in vars_vals:
         var_name = var_val["name"]
-        var_val = var_val["value"]
+        var_value = var_val["value"]
 
-        if str(var_val["value"]) == "nan": # fixing nan values
-            var_val = ""
+        if str(var_value) == "nan": # fixing nan values
+            var_value = ""
 
-        item[var_name] = var_val
+        elif type(var_value) == str: # fixing string values
+            var_value = re.sub(r"[\'\":,]", "", var_value)
+
+        item[var_name] = var_value
     
-    item["id"] = int.from_bytes(hashlib.sha256(item["path"]).digest()[:4], 'little') # obtain unique id from path
-    item["batch_id"] = batch_id # add batch_id to item
+    # adding unique id from path
+    item["id"] = str(file_id)
+
+    # add batch_id to item
+    item["batch_id"] = batch_id 
 
     # write to database
     process_item(item, conn)
@@ -135,8 +146,10 @@ def write_to_psql(input_path: str, batch_id: int):
     conn = create_connection()
     files_paths = glob(input_path + "/*.csv", recursive=True) # reading excels from input path
 
+    file_id = 1
     for file_path in tqdm(files_paths): # write each file to the database table
-        write_file_to_psql(file_path, batch_id, conn)
+        write_file_to_psql(file_path, batch_id, conn, file_id)
+        file_id += 1
 
     logging.info(f"write_to_psql: all files written")
 
