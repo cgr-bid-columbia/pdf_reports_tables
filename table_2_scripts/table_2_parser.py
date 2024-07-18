@@ -141,7 +141,7 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
                 report["format"] = "no-format"
 
             cleaned_df = pd.DataFrame(cleaned_data)
-            cleaned_df.to_csv(output_path + f"/{excel_file.split('/')[-1]}" + ".csv", index=False, sep="|")
+            cleaned_df.to_csv(output_path + f"/{excel_file.split("/")[-1].split(".xlsx")[0]}" + ".csv", index=False, sep="|")
             report["num_rows_post_cleaning"] = len(cleaned_df)
             
     except:
@@ -176,4 +176,4 @@ if __name__ == "__main__":
             formatting_reports.append(current_report)
     
     # exporting formatting reports
-    pd.DataFrame(pd.concat(formatting_reports)).to_csv(reports_path + r"\formatting_reports" + f"_{TASK_ID}.csv", sep="|", index=False)
+    pd.concat(formatting_reports).to_csv(reports_path + r"\formatting_reports" + f"_{TASK_ID}.csv", sep="|", index=False)
