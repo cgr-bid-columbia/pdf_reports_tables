@@ -1,5 +1,10 @@
 *.txt
 *.xlsx
 *.json
+*.csv
+*.csv#
+*.png
+*.pkl
 logs/
 .DS_Store
+__pycache__/
