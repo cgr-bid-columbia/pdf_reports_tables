@@ -176,4 +176,4 @@ if __name__ == "__main__":
             formatting_reports.append(current_report)
     
     # exporting formatting reports
-    pd.concat(formatting_reports).to_csv(reports_path + r"\formatting_reports" + f"_{TASK_ID}.csv", sep="|", index=False)
+    pd.concat(formatting_reports).to_csv(reports_path + r"/formatting_reports" + f"_{TASK_ID}.csv", sep="|", index=False)
