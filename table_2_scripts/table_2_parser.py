@@ -29,41 +29,114 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
 
     # reading file
     data = pd.read_excel(excel_file).iloc[:, 1:] # reading the file and removing the first column
+    print("data: ", data)
 
-    report = {"filename": excel_file, "num_rows": len(data)} # placeholder for output report
+    report = {"filename": excel_file, "num_rows": len(data), "num_control_types": 0} # placeholder for output report
 
-    # obtaining the columns of the dataframe
-    # original_cols_list = list(data["row"].values)
-
-    # cols_list = [] # placeholder for list of standardized column names
-    # cols_mapping = {} # mapping of original to standardized column names
-
-    # remove first row if invalid value found
-    if "item" in str(data["row"].values[0]).lower(): 
-        data = data.iloc[1:] 
-    else: 
-        pass
-
-    # removing second column
-    data = data.iloc[:, 1:]
-
-    report["num_control_types"] = 0
+    # placeholder for cleaned data
     cleaned_data = {"control_type": [], "indicator": []}
-    for _, row in data.iterrows():
-        
-        if " X" in str(row.values):
-            cleaned_data["control_type"].append(row.values[0].replace(" X", "").strip().lower())
-            cleaned_data["indicator"].append("yes")
-            report["num_control_types"] += 1
-        else:
-            cleaned_data["control_type"].append(row.values[0].strip().lower())
-            cleaned_data["indicator"].append("no")
 
-    cleaned_df = pd.DataFrame(cleaned_data)
-    report["num_rows_cleaned"] = len(cleaned_df)
+    # checking format of first rows
+
+    if len(data) >= 2:
+        first_item_row = data["row"].values[0]
+        first_item_values = data["value"].values[0]
+        second_item_row = data["row"].values[1]
+
+        if ("item" in str(first_item_row).lower() or "unnamed" in str(first_item_row).lower()) and ("contrato" not in str(second_item_row).lower()): # format 1
+            
+            # remove first row    
+            data = data.iloc[1:] 
+
+            # removing first column
+            data = data.iloc[:, 1:]
+
+            # finding the control type(s)
+            for _, row in data.iterrows():
+                if " X" in str(row.values): # tagging the control type
+                    cleaned_data["control_type"].append(row.values[0].replace(" X", "").strip().lower())
+                    cleaned_data["indicator"].append("yes")
+                    report["num_control_types"] += 1
+                else:
+                    cleaned_data["control_type"].append(row.values[0].strip().lower())
+                    cleaned_data["indicator"].append("no")
+            
+        elif "contrato" in str(first_item_row).lower() or "contrato" in str(second_item_row).lower(): # format 2
+
+            if "contrato" in str(first_item_row).lower(): # format 2.1
+                if "bien" in str(first_item_values).lower(): # format 2.1.1
+
+                    # removing first column
+                    data = data.iloc[:, 1:]
+
+                    # finding the control type(s)
+                    for _, row in data.iterrows(): 
+                        if "X" in str(row.values): # tagging the control type
+                            cleaned_data["control_type"].append(row.values[0].replace("X", "").strip().lower())
+                            cleaned_data["indicator"].append("yes")
+                            report["num_control_types"] += 1
+
+                        else:
+                            cleaned_data["control_type"].append(row.values[0].strip().lower())
+                            cleaned_data["indicator"].append("no")
+                
+                elif "bien" in str(second_item_row).lower(): # format 2.1.2
+
+                    for _, row in data.iterrows():
+                        if "X" in str(row.values): # tagging the control type
+                            cleaned_data["control_type"].append(row.row.strip().lower())
+                            cleaned_data["indicator"].append("yes")
+                            report["num_control_types"] += 1
+
+                        else:
+                            cleaned_data["control_type"].append(row.row.strip().lower())
+                            cleaned_data["indicator"].append("no")
+            
+            elif "contrato" in str(second_item_row).lower(): # format 2.2
+                
+                # remove first and second rows
+                data = data.iloc[2:]
+                
+                if "bien" in str(first_item_values).lower(): # format 2.2.1
+
+                    # removing first column
+                    data = data.iloc[:, 1:]
+
+                    # finding the control type(s)
+                    for _, row in data.iterrows(): 
+                        if "X" in str(row.values): # tagging the control type
+                            cleaned_data["control_type"].append(row.values[0].replace("X", "").strip().lower())
+                            cleaned_data["indicator"].append("yes")
+                            report["num_control_types"] += 1
+
+                        else:
+                            cleaned_data["control_type"].append(row.values[0].strip().lower())
+                            cleaned_data["indicator"].append("no")
+                
+                elif "bien" in str(second_item_row).lower(): # format 2.2.2
+
+                    for _, row in data.iterrows():
+                        if "X" in str(row.values): # tagging the control type
+                            cleaned_data["control_type"].append(row.row.strip().lower())
+                            cleaned_data["indicator"].append("yes")
+                            report["num_control_types"] += 1
+
+                        else:
+                            cleaned_data["control_type"].append(row.row.strip().lower())
+                            cleaned_data["indicator"].append("no")
+                
+
+        cleaned_df = pd.DataFrame(cleaned_data)
+        report["num_rows_post_cleaning"] = len(cleaned_df)
+        print("cleaned_df: ", cleaned_df)
+        
+        cleaned_df.to_csv(output_path + f"/{excel_file.split('/')[-1]}" + ".csv", index=False, sep="|")
+        return pd.DataFrame([report])
     
-    cleaned_df.to_csv(output_path + f"/{excel_file.split('/')[-1]}" + ".csv", index=False, delimiter="|")
-    return report
+    else:
+        report["num_control_types"] = "-"
+        report["num_rows_post_cleaning"] = "-"
+        return pd.DataFrame([report])
 
 
 def divide_chunks(list_input: list, num_chunks: int) -> list:
@@ -89,7 +162,7 @@ if __name__ == "__main__":
     for item in tqdm(paths_for_job):
         if "table_2." in item and  "~" not in item and "parsing_reports" not in item:
             current_report = table_2_data_corrector(item, output_path)
-            formatting_reports.append(pd.DataFrame(current_report))
+            formatting_reports.append(current_report)
     
     # exporting formatting reports
     pd.DataFrame(pd.concat(formatting_reports)).to_csv(reports_path + r"\formatting_reports" + f"_{TASK_ID}.csv", sep="|", index=False)
