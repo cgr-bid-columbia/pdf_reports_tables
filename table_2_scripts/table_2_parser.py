@@ -2,7 +2,7 @@
 from tqdm import tqdm
 from glob import glob
 import pandas as pd
-import unicodedata, logging, json, os
+import logging, json, os
 
 JSON_FILE = "paths.json"
 pdf_tables_file = open(JSON_FILE, "r")
@@ -29,10 +29,10 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
 
     # reading file
     data = pd.read_excel(excel_file).iloc[:, 1:] # reading the file and removing the first column
-    print("data: ", data)
 
+    logging.info(f"reading file: {excel_file}, num_rows: {len(data)}")
     report = {"filename": excel_file, "num_rows": len(data), 
-              "num_control_types": 0, "num_rows_post_cleaning": "-"} # placeholder for output report
+              "num_control_types": 0, "num_rows_post_cleaning": "-", "format": "-"} # placeholder for output report
 
     # placeholder for cleaned data
     cleaned_data = {"control_type": [], "indicator": []}
@@ -45,7 +45,8 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
             second_item_row = data["row"].values[1]
 
             if ("item" in str(first_item_row).lower() or "unnamed" in str(first_item_row).lower()) and ("contrato" not in str(second_item_row).lower()): # format 1
-                
+                report["format"] = "1"
+
                 # remove first row    
                 data = data.iloc[1:] 
 
@@ -66,6 +67,7 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
 
                 if "contrato" in str(first_item_row).lower(): # format 2.1
                     if "bien" in str(first_item_values).lower(): # format 2.1.1
+                        report["format"] = "2.1.1"
 
                         # removing first column
                         data = data.iloc[:, 1:]
@@ -82,6 +84,7 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
                                 cleaned_data["indicator"].append("no")
                     
                     elif "bien" in str(second_item_row).lower(): # format 2.1.2
+                        report["format"] = "2.1.2"
 
                         for _, row in data.iterrows():
                             if "X" in str(row.values): # tagging the control type
@@ -94,14 +97,15 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
                                 cleaned_data["indicator"].append("no")
                     
                     else:
-                        pass
+                        report["format"] = "2.1-no-format"
                 
                 elif "contrato" in str(second_item_row).lower(): # format 2.2
-                    
+
                     # remove first and second rows
                     data = data.iloc[2:]
                     
                     if "bien" in str(first_item_values).lower(): # format 2.2.1
+                        report["format"] = "2.2.1"
 
                         # removing first column
                         data = data.iloc[:, 1:]
@@ -118,6 +122,7 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
                                 cleaned_data["indicator"].append("no")
                     
                     elif "bien" in str(second_item_row).lower(): # format 2.2.2
+                        report["format"] = "2.2.2"
 
                         for _, row in data.iterrows():
                             if "X" in str(row.values): # tagging the control type
@@ -130,16 +135,15 @@ def table_2_data_corrector(excel_file: str, output_path: str) -> pd.DataFrame:
                                 cleaned_data["indicator"].append("no")
                     
                     else:
-                        pass
+                        report["format"] = "2.2-no-format"
             
             else:
-                pass
+                report["format"] = "no-format"
 
             cleaned_df = pd.DataFrame(cleaned_data)
             cleaned_df.to_csv(output_path + f"/{excel_file.split('/')[-1]}" + ".csv", index=False, sep="|")
             report["num_rows_post_cleaning"] = len(cleaned_df)
-            print("cleaned_df: ", cleaned_df)
-    
+            
     except:
         report["num_control_types"] = "-"
     
