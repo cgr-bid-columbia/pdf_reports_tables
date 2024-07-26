@@ -1,20 +1,5 @@
-# CREATE TABLE table_1_reports_metatada (
-#     id VARCHAR(32) PRIMARY KEY,
-#     doc_number VARCHAR(100),
-#     doc_type VARCHAR(100),
-#     title TEXT,
-#     investment_code VARCHAR(100),
-#     subject TEXT,
-#     description TEXT,
-#     entity TEXT,
-#     ubigeo TEXT,
-#     amount TEXT,
-#     issue_date TEXT,
-#     organic_unit TEXT,
-#     path TEXT,
-#     batch_id INTEGER
-# );
-import os, psycopg2, hashlib, json, logging, re
+
+import os, psycopg2, json, logging, re
 from tqdm import tqdm
 from glob import glob
 import pandas as pd
