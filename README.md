@@ -6,6 +6,8 @@ The data these scripts take as input was obtained using the scripts from [claims
 
 As step 0, remember to always create a virtual environment. The python version and packages are specified in `runtime.txt` and `requirements.txt`, respectively.
 
+![](images/table_1_2.png)
+
 # Table 1
 
 ![](images/table_1.png)
