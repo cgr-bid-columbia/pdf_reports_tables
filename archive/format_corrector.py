@@ -1,6 +1,12 @@
 import pandas as pd 
 import json 
 
+"""
+Jacob's approach to parsing the tables.
+Final version of the scripts use a similar 
+approach to this one.
+"""
+
 # define file path 
 file_path = "/Users/jacobposada/columbia/econ research/Project-Report-Format/"
 
